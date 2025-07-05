@@ -2,8 +2,8 @@ pip install starlette-admin
 pip install fastapi-users[sqlalchemy]
 
 pip install typer[all]  for cli
-
-
+pip install "uvicorn[standard]
+pip install python-multipart sqlalchemy jinja2
 python cli.py users create-superuser admin@email.com bapi@1234
 
 

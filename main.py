@@ -30,9 +30,9 @@ admin.mount_to(app)
 
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello, World!"}
+# @app.get("/")
+# async def root():
+#     return {"message": "Hello, World!"}
 
 #user update ,get 
 app.include_router(
@@ -46,6 +46,16 @@ app.include_router(
     prefix="/auth/jwt",
     tags=["auth"]
 )
+#this is for hiding authentication link fro swagger
+
+
+# auth_router = fastapi_users.get_auth_router(auth_backend, requires_verification=True)
+# # Hide all routes from Swagger
+# for route in auth_router.routes:
+#     route.include_in_schema = False # type: ignore
+# # Mount the modified router
+# app.include_router(auth_router, prefix="/auth/jwt")
+
 
 #token base varification
 app.include_router(
@@ -78,17 +88,72 @@ async def register(user_create: TUserCreate, user_manager=Depends(get_user_manag
 
 
 
+from starlette.responses import RedirectResponse
+from starlette.templating import Jinja2Templates
+from fastapi import Request, Depends
+from sqlalchemy.orm import Session
+from sqlalchemy.future import select
+from starlette.responses import Response
+from fastapi import FastAPI, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from MODELS.M_task import Task
+from fastapi.staticfiles import StaticFiles
+
+templates = Jinja2Templates(directory="templates")
+
+app.mount("/static",StaticFiles(directory="static",html=True),name="static")
+
+@app.get("/")
+async def home(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+    result = await db.execute(select(Task))
+    todos = result.scalars().all()
+    return templates.TemplateResponse("auth/index.html", {"request": request, "todo_list": todos})
 
 
 
 
 
 
+from fastapi import Request, Form, Depends, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+#from fastapi_users import InvalidCredentialsException
+#from fastapi_users.authentication import JWTAuthentication
+from fastapi_users.manager import BaseUserManager
+from uuid import UUID as UD
+from fastapi_users.password import PasswordHelper
 
 
+@app.get("/admin-login", response_class=HTMLResponse)
+async def get_login_form(request: Request):
+    return templates.TemplateResponse("xxx/login.html", {"request": request, "error": None})
 
 
+# @app.post("/admin-login", response_class=HTMLResponse)
+# async def login(
+#     request: Request,
+#     username: str = Form(...),
+#     password: str = Form(...),
+#     user_manager: BaseUserManager[UD, str] = Depends(fastapi_users.get_user_manager),
+# ):
+#     user = await user_manager.get_by_email(username)
+#     if user is None or not user.is_superuser:
+#         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
 
+#     password_helper = PasswordHelper()
+#     if not password_helper.verify(password, user.hashed_password):
+#         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+
+#     # Create JWT token (expires in 1 hour)
+#     token_data = {
+#         "sub": str(user.id),
+#         "aud": auth_backend.name,
+#     }
+#     token = generate_jwt(token_data, auth_backend.transport.secret, timedelta(hours=1))
+
+#     response = RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
+#     response.set_cookie(key="Authorization", value=f"Bearer {token}", httponly=True)
+#     return response
 
 
 
