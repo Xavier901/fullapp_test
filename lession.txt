@@ -1,0 +1,47 @@
+pip install starlette-admin
+pip install fastapi-users[sqlalchemy]
+
+pip install typer[all]  for cli
+
+
+python cli.py users create-superuser admin@email.com bapi@1234
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
