@@ -11,7 +11,7 @@ from SCHEMAS.S_fastapi_user import UserRead, UserUpdate, UserCreate,TUserCreate
 from AUTHENTICATION.user_manager import get_user_manager
 from fastapi_users.exceptions import UserAlreadyExists
 from APP import task_r
-
+from ADMIN.admin import admin
 app = FastAPI()
 
 
@@ -23,6 +23,12 @@ app.include_router(task_r.task_router,prefix="/Task")
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
+admin.mount_to(app)
+
+
+
 
 @app.get("/")
 async def root():
