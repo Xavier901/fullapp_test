@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI,Depends, HTTPException, status
 
 
@@ -120,42 +121,66 @@ from fastapi.templating import Jinja2Templates
 #from fastapi_users import InvalidCredentialsException
 #from fastapi_users.authentication import JWTAuthentication
 from fastapi_users.manager import BaseUserManager
-from uuid import UUID as UD
+from uuid import UUID 
 from fastapi_users.password import PasswordHelper
+from MODELS.M_fastapi_user import UserTable as User
+from fastapi_users.jwt import generate_jwt
 
+from AUTHENTICATION.auth import auth_backend,get_jwt_strategy
+from datetime import timedelta
 
 @app.get("/admin-login", response_class=HTMLResponse)
 async def get_login_form(request: Request):
     return templates.TemplateResponse("xxx/login.html", {"request": request, "error": None})
 
 
-# @app.post("/admin-login", response_class=HTMLResponse)
-# async def login(
-#     request: Request,
-#     username: str = Form(...),
-#     password: str = Form(...),
-#     user_manager: BaseUserManager[UD, str] = Depends(fastapi_users.get_user_manager),
-# ):
-#     user = await user_manager.get_by_email(username)
-#     if user is None or not user.is_superuser:
-#         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+@app.post("/admin-login", response_class=HTMLResponse)
+async def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    user_manager: BaseUserManager[User, UUID] = Depends(get_user_manager),
+):
+    user = await user_manager.get_by_email(username)
+    if user is None or not user.is_superuser:
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
 
-#     password_helper = PasswordHelper()
-#     if not password_helper.verify(password, user.hashed_password):
-#         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+    password_helper = PasswordHelper()
+    verified, _ = password_helper.verify_and_update(password, user.hashed_password)  #it retun a touple so varify hold 1st value and _ will hold secoend
+    if not verified:
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
 
-#     # Create JWT token (expires in 1 hour)
-#     token_data = {
-#         "sub": str(user.id),
-#         "aud": auth_backend.name,
-#     }
-#     token = generate_jwt(token_data, auth_backend.transport.secret, timedelta(hours=1))
+    token_data = {
+    "sub": str(user.id),
+    "aud": auth_backend.name,
+    }
+    lifetime = int(timedelta(hours=1).total_seconds())
+    strategy = get_jwt_strategy() # ✅ FIXED
+    token = generate_jwt(token_data, strategy.secret, lifetime)
 
-#     response = RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
-#     response.set_cookie(key="Authorization", value=f"Bearer {token}", httponly=True)
-#     return response
-
-
-
+    response = RedirectResponse(url="/admin/", status_code=status.HTTP_302_FOUND)
+    response.set_cookie(key="Authorization", value=f"Bearer {token}", httponly=True)
+    return response
 
 
+
+
+
+
+
+
+@app.get("/loginx", response_class=HTMLResponse)
+async def loginx(request: Request):
+    return templates.TemplateResponse("xxx/login.html", {"request": request})
+
+@app.get("/profile", response_class=HTMLResponse)
+async def profile(request: Request):
+    return templates.TemplateResponse("xxx/profile.html", {"request": request})
+
+@app.get("/registerx", response_class=HTMLResponse)
+async def registerx(request: Request):
+    return templates.TemplateResponse("xxx/register.html", {"request": request})
+
+@app.get("/table", response_class=HTMLResponse)
+async def table(request: Request):
+    return templates.TemplateResponse("xxx/table.html", {"request": request})
